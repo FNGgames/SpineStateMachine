@@ -1,2 +1,3 @@
 # SpineStateMachine
-A csharp state machine for animation code in Spine and Unity
+A state machine for running animation code in Spine and Unity
+
