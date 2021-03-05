@@ -18,6 +18,7 @@ namespace SpineStateMachine
 
         public void Retain(SpineFsm fsm, string key)
         {
+            if (retained) throw new StateAlreadyRetainedException(this);
             this.fsm = fsm ?? throw new ArgumentNullException(nameof(fsm));
             this.key = key;
             retained = true;
@@ -25,6 +26,7 @@ namespace SpineStateMachine
 
         public void Release()
         {
+            Exit();
             fsm = null;
             key = null;
             trackEntry = null;
@@ -35,7 +37,7 @@ namespace SpineStateMachine
 
         public void Enter()
         {
-            if (active) throw new InvalidStateOperationException("Enter", active);
+            if (active) return;
             active = true;
             fsm?.Log($"Enter State {GetType().Name} ({key})", SpineFsm.Logging.StatePlayback);
             OnEnter();
@@ -43,13 +45,13 @@ namespace SpineStateMachine
         
         public void Update(float deltaTime)
         {
-            if (!active) throw new InvalidStateOperationException("Update", !active);
+            if (!active) return;
             OnUpdate(deltaTime);
         }
 
         public void Exit()
         {
-            if (!active) throw new InvalidStateOperationException("Exit", !active);
+            if (!active) return;
             active = false;
             fsm?.Log($"Exit State {GetType().Name} ({key})", SpineFsm.Logging.StatePlayback);
             OnExit();
@@ -59,21 +61,21 @@ namespace SpineStateMachine
 
         public void Enter(TrackEntry te)
         {
-            if (trackEntry == null) throw new NullTrackEntryException();
+            if (trackEntry == null) throw new NullTrackEntryException(this);
             trackEntry = te;
             Enter();
         }
 
         public void Update(TrackEntry te, float deltaTime)
         {
-            if (trackEntry == null) throw new NullTrackEntryException();
+            if (trackEntry == null) throw new NullTrackEntryException(this);
             trackEntry = te;
             Update(deltaTime);
         }
 
         public void Exit(TrackEntry te)
         {
-            if (trackEntry == null) throw new NullTrackEntryException();
+            if (trackEntry == null) throw new NullTrackEntryException(this);
             trackEntry = te;
             Exit();
         }

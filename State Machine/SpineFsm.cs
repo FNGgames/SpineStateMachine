@@ -47,10 +47,12 @@ namespace SpineStateMachine
             events = new Dictionary<string, List<Action>>();
             properties = new Properties();
             validClips = new HashSet<string>();
+            
             GetValidClips();
 
             animation.AnimationState.Start += OnTrackStart;
             animation.AnimationState.Interrupt += OnTrackInterrupt;
+            animation.AnimationState.End += OnTrackEnd;
             animation.AnimationState.Event += OnEvent;
         }
 
@@ -74,8 +76,7 @@ namespace SpineStateMachine
         public void RemoveGlobalState(SpineFsmState state)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
-            if (!globalStates.Remove(state)) return;
-            state.Exit();
+            if (!globalStates.Remove(state)) throw new StateNotFoundException(this, state);
             state.Release();
             Log($"Global State Removed ({state.GetType().Name})", Logging.StateSetup);
         }
@@ -97,9 +98,7 @@ namespace SpineStateMachine
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
             if (string.IsNullOrEmpty(state.key)) throw new StringIsNullOrEmptyException($"Invalid condition in state {state.GetType().Name}");
-            if (!conditionalStates.ContainsKey(state.key)) return;
-            if (!conditionalStates[state.key].Remove(state)) return;
-            state.Exit();
+            if (!conditionalStates.ContainsKey(state.key) || !conditionalStates[state.key].Remove(state)) throw new StateNotFoundException(this, state);
             state.Release();
             Log($"Conditional State Removed ({state.GetType().Name})", Logging.StateSetup);
         }
@@ -120,27 +119,11 @@ namespace SpineStateMachine
         public void RemoveState(SpineFsmState state)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
-            if (string.IsNullOrEmpty(state.key))  throw new StringIsNullOrEmptyException($"Invalid clip name in state {state.GetType().Name}");
-            if (!states.ContainsKey(state.key)) return;
-            if (!states[state.key].Remove(state)) return;
+            if (string.IsNullOrEmpty(state.key)) throw new StringIsNullOrEmptyException($"Invalid clip name in state {state.GetType().Name}");
+            if (!states.ContainsKey(state.key) || !states[state.key].Remove(state)) throw new StateNotFoundException(this, state);
             if (states[state.key].Count == 0) states.Remove(state.key);
-            Log($"State Removed For Clip {state.key.ToUpper()} ({state.GetType().Name})", Logging.StateSetup);
-            state.Exit();
             state.Release();
-        }
-        
-        // get all the states for an associated clip or condition
-
-        protected List<SpineFsmState> GetStatesForClip(string clipName)
-        {
-            if (string.IsNullOrEmpty(clipName)) throw new StringIsNullOrEmptyException(nameof(clipName));
-            return states.ContainsKey(clipName) ? states[clipName] : null;
-        }
-
-        protected List<SpineFsmState> GetStatesForCondition(string condition)
-        {
-            if (string.IsNullOrEmpty(condition)) throw new StringIsNullOrEmptyException(nameof(condition));
-            return conditionalStates.ContainsKey(condition) ? conditionalStates[condition] : null;
+            Log($"State Removed For Clip {state.key.ToUpper()} ({state.GetType().Name})", Logging.StateSetup);
         }
 
         #endregion
@@ -333,25 +316,23 @@ namespace SpineStateMachine
             var activeStates = GetStatesForClip(trackEntry.Animation.Name);
             if (activeStates == null) return;
             
-            foreach (var state in activeStates)
-            {
-                Log($"State OnEnter (Clip: {trackEntry.Animation.Name} State: {state.GetType().Name})", Logging.StatePlayback);
-                state.Enter(trackEntry);
-            }
+            foreach (var state in activeStates) state.Enter(trackEntry);
         }
 
         protected virtual void OnTrackInterrupt(TrackEntry trackEntry)
         {
             Log($"Track Interrupt (Clip: {trackEntry.Animation.Name}, Track: {trackEntry.TrackIndex})", Logging.AnimationPlayback);
-            
             var activeStates = GetStatesForClip(trackEntry.Animation.Name);
             if (activeStates == null) return;
-            
-            foreach (var state in activeStates)
-            {
-                Log($"State OnExit (Clip: {trackEntry.Animation.Name} State: {state.GetType().Name})", Logging.StatePlayback);
-                state.Exit(trackEntry);
-            }
+            foreach (var state in activeStates) state.Exit(trackEntry);
+        }
+
+        protected virtual void OnTrackEnd(TrackEntry trackEntry)
+        {
+            Log($"Track End (Clip: {trackEntry.Animation.Name}, Track: {trackEntry.TrackIndex})", Logging.AnimationPlayback);
+            var activeStates = GetStatesForClip(trackEntry.Animation.Name);
+            if (activeStates == null) return;
+            foreach (var state in activeStates) state.Exit(trackEntry);
         }
         
         // TODO: Handle tracks that end without being interrupted
@@ -401,7 +382,7 @@ namespace SpineStateMachine
         protected virtual void OnEvent(TrackEntry trackentry, Event e)
         {
             var evtName = e.Data.Name;
-            Log($"Event Fired (Event: {evtName})", Logging.EventSetup);
+            Log($"Event Fired (Event: {evtName})", Logging.EventPlayback);
             if (!events.ContainsKey(evtName)) return;
             foreach (var action in events[evtName]) action();
         }
@@ -488,7 +469,7 @@ namespace SpineStateMachine
 
         public TrackEntry GetCurrent(int track) => animation.AnimationState.GetCurrent(track);
 
-        public bool IsEmpty(int track) => GetCurrent(track) == null;
+        public bool IsTrackEmpty(int track) => GetCurrent(track) == null;
 
         public bool IsPlayingClip(int track, string clip) => GetCurrent(track)?.Animation.Name == clip;
 
@@ -513,6 +494,18 @@ namespace SpineStateMachine
         {
             validClips.Clear();
             foreach (var clip in Animation.Skeleton.Data.Animations.ToArray()) validClips.Add(clip.Name);
+        }
+
+        protected List<SpineFsmState> GetStatesForClip(string clipName)
+        {
+            if (string.IsNullOrEmpty(clipName)) throw new StringIsNullOrEmptyException(nameof(clipName));
+            return states.ContainsKey(clipName) ? states[clipName] : null;
+        }
+
+        protected List<SpineFsmState> GetStatesForCondition(string condition)
+        {
+            if (string.IsNullOrEmpty(condition)) throw new StringIsNullOrEmptyException(nameof(condition));
+            return conditionalStates.ContainsKey(condition) ? conditionalStates[condition] : null;
         }
 
         #endregion

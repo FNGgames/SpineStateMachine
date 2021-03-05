@@ -1,4 +1,5 @@
-﻿using Spine;
+﻿using System;
+using Spine;
 using Spine.Unity;
 using UnityEngine;
 
@@ -10,13 +11,12 @@ namespace SpineStateMachine
         public SpineFsm.Logging loggingFlags = SpineFsm.Logging.None;
         public bool updateSkeleton;
 
-        protected SkeletonAnimation anim;
-        protected SpineFsm fsm;
-        protected AnimationStateData data;
-
+        protected SkeletonAnimation anim { get; private set; }
+        protected AnimationStateData data { get; private set; }
+        protected SpineFsm fsm { get; private set; }
         public bool initialized { get; private set; }
 
-        public void Awake()
+        private void Awake()
         {
             anim = GetComponent<SkeletonAnimation>();
             fsm = new SpineFsm(anim, loggingFlags);
@@ -25,7 +25,7 @@ namespace SpineStateMachine
             Setup();
         }
 
-        protected void Update()
+        private void Update()
         {
             if (!initialized) return;
             OnBeforeUpdate();
