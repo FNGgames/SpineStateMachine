@@ -35,7 +35,7 @@ namespace SpineStateMachine
         public SpineFsm(SkeletonAnimation animation, Logging logging = 0)
         {
             if (animation == null) throw new ArgumentNullException(nameof(animation));
-            
+
             this.animation = animation;
             this.logging = logging;
 
@@ -47,7 +47,7 @@ namespace SpineStateMachine
             events = new Dictionary<string, List<Action>>();
             properties = new Properties();
             validClips = new HashSet<string>();
-            
+
             GetValidClips();
 
             animation.AnimationState.Start += OnTrackStart;
@@ -61,7 +61,7 @@ namespace SpineStateMachine
         // STATE CONTROL
 
         #region STATE_CONTROL
-        
+
         // Global States
 
         public virtual void AddGlobalState(SpineFsmState state)
@@ -80,13 +80,13 @@ namespace SpineStateMachine
             state.Release();
             Log($"Global State Removed ({state.GetType().Name})", Logging.StateSetup);
         }
-        
+
         // Conditional States
 
         public virtual void AddConditionalState(string condition, SpineFsmState state)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
-            if (string.IsNullOrEmpty(condition)) throw new StringIsNullOrEmptyException($"{nameof(condition)}");
+            if (string.IsNullOrEmpty(condition)) throw new StringIsNullOrWhitespaceException($"{nameof(condition)}");
             if (conditionalStates.ContainsKey(condition)) conditionalStates[condition].Add(state);
             else conditionalStates[condition] = new List<SpineFsmState> {state};
             state.Retain(this, condition);
@@ -97,18 +97,20 @@ namespace SpineStateMachine
         public void RemoveConditionalState(SpineFsmState state)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
-            if (string.IsNullOrEmpty(state.key)) throw new StringIsNullOrEmptyException($"Invalid condition in state {state.GetType().Name}");
-            if (!conditionalStates.ContainsKey(state.key) || !conditionalStates[state.key].Remove(state)) throw new StateNotFoundException(this, state);
+            if (string.IsNullOrEmpty(state.key))
+                throw new StringIsNullOrWhitespaceException($"Invalid condition in state {state.GetType().Name}");
+            if (!conditionalStates.ContainsKey(state.key) || !conditionalStates[state.key].Remove(state))
+                throw new StateNotFoundException(this, state);
             state.Release();
             Log($"Conditional State Removed ({state.GetType().Name})", Logging.StateSetup);
         }
-        
+
         // Clip States
 
         public virtual void AddState(string clipName, SpineFsmState state)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
-            if (string.IsNullOrEmpty(clipName)) throw new StringIsNullOrEmptyException($"{nameof(clipName)}");
+            if (string.IsNullOrEmpty(clipName)) throw new StringIsNullOrWhitespaceException($"{nameof(clipName)}");
             if (states.ContainsKey(clipName)) states[clipName].Add(state);
             else states[clipName] = new List<SpineFsmState> {state};
             state.Retain(this, clipName);
@@ -119,8 +121,10 @@ namespace SpineStateMachine
         public void RemoveState(SpineFsmState state)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
-            if (string.IsNullOrEmpty(state.key)) throw new StringIsNullOrEmptyException($"Invalid clip name in state {state.GetType().Name}");
-            if (!states.ContainsKey(state.key) || !states[state.key].Remove(state)) throw new StateNotFoundException(this, state);
+            if (string.IsNullOrEmpty(state.key))
+                throw new StringIsNullOrWhitespaceException($"Invalid clip name in state {state.GetType().Name}");
+            if (!states.ContainsKey(state.key) || !states[state.key].Remove(state))
+                throw new StateNotFoundException(this, state);
             if (states[state.key].Count == 0) states.Remove(state.key);
             state.Release();
             Log($"State Removed For Clip {state.key.ToUpper()} ({state.GetType().Name})", Logging.StateSetup);
@@ -132,9 +136,10 @@ namespace SpineStateMachine
 
         #region ANIMATION_CONTROL
 
-        public TrackEntry SetAnimation(int track, string clipName, bool loop, float mixDuration = -1, float timeScale = -1, float alpha = -1)
+        public TrackEntry SetAnimation(string clipName, int track = 0, bool loop = true, float mixDuration = -1,
+            float timeScale = -1, float alpha = -1)
         {
-            if (string.IsNullOrEmpty(clipName)) throw new StringIsNullOrEmptyException($"{nameof(clipName)}");
+            if (string.IsNullOrEmpty(clipName)) throw new StringIsNullOrWhitespaceException($"{nameof(clipName)}");
             if (!IsValidClip(clipName)) throw new InvalidClipException(clipName);
 
             if (track < 0) track = 0;
@@ -153,20 +158,22 @@ namespace SpineStateMachine
             return trackEntry;
         }
 
-        public TrackEntry SetAnimationIfDifferent(int track, string clipName, bool loop, float mixDuration = -1, float timeScale = -1, float alpha = -1)
+        public TrackEntry SetAnimationIfDifferent(string clipName, int track = 0, bool loop = true, float mixDuration = -1,
+            float timeScale = -1, float alpha = -1)
         {
-            if (string.IsNullOrEmpty(clipName)) throw new StringIsNullOrEmptyException($"{nameof(clipName)}");
+            if (string.IsNullOrEmpty(clipName)) throw new StringIsNullOrWhitespaceException($"{nameof(clipName)}");
             var current = GetCurrent(track);
             if (current == null || current.Animation.Name != clipName)
-                return SetAnimation(track, clipName, loop, mixDuration, timeScale, alpha);
+                return SetAnimation(clipName, track, loop, mixDuration, timeScale, alpha);
             return null;
         }
 
-        public TrackEntry QueueAnimation(int track, string clipName, bool loop, float delay = 0, float mixDuration = -1, float timeScale = -1, float alpha = -1)
+        public TrackEntry QueueAnimation(string clipName, int track = 0, bool loop = true, float delay = 0, float mixDuration = -1,
+            float timeScale = -1, float alpha = -1)
         {
-            if (string.IsNullOrEmpty(clipName)) throw new StringIsNullOrEmptyException($"{nameof(clipName)}");
+            if (string.IsNullOrEmpty(clipName)) throw new StringIsNullOrWhitespaceException($"{nameof(clipName)}");
             if (!IsValidClip(clipName)) throw new InvalidClipException(clipName);
-            
+
             if (track < 0) track = 0;
             if (delay < 0) delay = 0;
 
@@ -195,7 +202,7 @@ namespace SpineStateMachine
             Log($"Queue Empty Animation (Track: {track})", Logging.AnimationSetup);
             return animation.AnimationState.AddEmptyAnimation(track, mixDuration, delay);
         }
-        
+
         // settings for individual clips
 
         public void SetAlpha(string clipName, float alpha)
@@ -225,7 +232,7 @@ namespace SpineStateMachine
             Log($"Unset Timescale (Clip: {clipName})", Logging.AnimationSetup);
             timeScales.Remove(clipName);
         }
-        
+
         #endregion
 
         // PROPERTIES
@@ -235,7 +242,7 @@ namespace SpineStateMachine
         public void SetCondition(string condition, bool active)
         {
             Log($"Set Condition (Key: {condition}, State: {active})", Logging.Properties);
-            
+
             if (active)
             {
                 if (properties.GetBool(condition)) return;
@@ -255,18 +262,26 @@ namespace SpineStateMachine
         public void SwapCondition(string previous, string next)
         {
             Log($"Swap Condition (Previous: {previous}, Next: {next})", Logging.Properties);
-            
+
             if (properties.GetBool(previous))
+            {
                 if (conditionalStates.ContainsKey(previous))
+                {
                     foreach (var state in conditionalStates[previous])
                         state.Exit();
+                }
+            }
 
             properties.SetBool(previous, false);
 
             if (!properties.GetBool(next))
+            {
                 if (conditionalStates.ContainsKey(next))
+                {
                     foreach (var state in conditionalStates[next])
                         state.Enter();
+                }
+            }
 
             properties.SetBool(next, true);
         }
@@ -280,7 +295,7 @@ namespace SpineStateMachine
         }
 
         public float GetFloat(string name) => properties.GetFloat(name);
-        
+
         public bool IsFloatDefined(string name) => properties.ContainsFloat(name);
 
         public void SetInt(string name, int value)
@@ -290,7 +305,7 @@ namespace SpineStateMachine
         }
 
         public int GetInt(string name) => properties.GetInt(name);
-        
+
         public bool IsIntDefined(string name) => properties.ContainsInt(name);
 
         public void SetString(string name, string value)
@@ -300,7 +315,7 @@ namespace SpineStateMachine
         }
 
         public string GetString(string name) => properties.GetString(name);
-        
+
         public bool IsStringDefined(string name) => properties.ContainsString(name);
 
         #endregion
@@ -311,30 +326,37 @@ namespace SpineStateMachine
 
         protected virtual void OnTrackStart(TrackEntry trackEntry)
         {
-            Log($"Track Start (Clip: {trackEntry.Animation.Name}, Track: {trackEntry.TrackIndex})", Logging.AnimationPlayback);
-            
+            Log($"Track Start (Clip: {trackEntry.Animation.Name}, Track: {trackEntry.TrackIndex})",
+                Logging.AnimationPlayback);
+
             var activeStates = GetStatesForClip(trackEntry.Animation.Name);
             if (activeStates == null) return;
-            
+
             foreach (var state in activeStates) state.Enter(trackEntry);
         }
 
         protected virtual void OnTrackInterrupt(TrackEntry trackEntry)
         {
-            Log($"Track Interrupt (Clip: {trackEntry.Animation.Name}, Track: {trackEntry.TrackIndex})", Logging.AnimationPlayback);
+            Log($"Track Interrupt (Clip: {trackEntry.Animation.Name}, Track: {trackEntry.TrackIndex})",
+                Logging.AnimationPlayback);
+            
             var activeStates = GetStatesForClip(trackEntry.Animation.Name);
             if (activeStates == null) return;
+            
             foreach (var state in activeStates) state.Exit(trackEntry);
         }
 
         protected virtual void OnTrackEnd(TrackEntry trackEntry)
         {
-            Log($"Track End (Clip: {trackEntry.Animation.Name}, Track: {trackEntry.TrackIndex})", Logging.AnimationPlayback);
+            Log($"Track End (Clip: {trackEntry.Animation.Name}, Track: {trackEntry.TrackIndex})",
+                Logging.AnimationPlayback);
+            
             var activeStates = GetStatesForClip(trackEntry.Animation.Name);
             if (activeStates == null) return;
+            
             foreach (var state in activeStates) state.Exit(trackEntry);
         }
-        
+
         // TODO: Handle tracks that end without being interrupted
 
         public virtual void Update(float deltaTime)
@@ -350,7 +372,7 @@ namespace SpineStateMachine
             foreach (var trackEntry in animation.AnimationState.Tracks)
             {
                 if (trackEntry == null) continue;
-                
+
                 var activeStates = GetStatesForClip(trackEntry.Animation.Name);
                 if (activeStates == null) continue;
 
@@ -458,13 +480,14 @@ namespace SpineStateMachine
 
             animation.AnimationState.Start -= OnTrackStart;
             animation.AnimationState.Interrupt -= OnTrackInterrupt;
+            animation.AnimationState.End -= OnTrackEnd;
             animation.AnimationState.Event -= OnEvent;
         }
 
         #endregion
 
         // HELPERS
-        
+
         #region HELPERS
 
         public TrackEntry GetCurrent(int track) => animation.AnimationState.GetCurrent(track);
@@ -476,7 +499,7 @@ namespace SpineStateMachine
         public bool IsValidClip(string clip) => validClips.Contains(clip);
 
         public bool IsClipPlaying(string clip) => IsClipPlaying(clip, out var _);
-        
+
         public bool IsClipPlaying(string clip, out TrackEntry track)
         {
             foreach (var trackEntry in Animation.AnimationState.Tracks)
@@ -498,13 +521,13 @@ namespace SpineStateMachine
 
         protected List<SpineFsmState> GetStatesForClip(string clipName)
         {
-            if (string.IsNullOrEmpty(clipName)) throw new StringIsNullOrEmptyException(nameof(clipName));
+            if (string.IsNullOrEmpty(clipName)) throw new StringIsNullOrWhitespaceException(nameof(clipName));
             return states.ContainsKey(clipName) ? states[clipName] : null;
         }
 
         protected List<SpineFsmState> GetStatesForCondition(string condition)
         {
-            if (string.IsNullOrEmpty(condition)) throw new StringIsNullOrEmptyException(nameof(condition));
+            if (string.IsNullOrEmpty(condition)) throw new StringIsNullOrWhitespaceException(nameof(condition));
             return conditionalStates.ContainsKey(condition) ? conditionalStates[condition] : null;
         }
 
@@ -544,5 +567,6 @@ namespace SpineStateMachine
         }
 
         #endregion
+
     }
 }

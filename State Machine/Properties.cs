@@ -13,55 +13,100 @@ namespace SpineStateMachine
 
         // floats
 
-        public void SetFloat(string name, float value)
+        public void SetFloat(string propertyName, float propertyValue)
         {
-            _floatProperties[name] = value;
+            if (string.IsNullOrWhiteSpace(propertyName)) throw new StringIsNullOrWhitespaceException(nameof(propertyName));
+            _floatProperties[propertyName] = propertyValue;
         }
 
-        public float GetFloat(string name) => _floatProperties[name];
+        public float GetFloat(string propertyName)
+        {
+            if (string.IsNullOrWhiteSpace(propertyName)) throw new StringIsNullOrWhitespaceException(nameof(propertyName));
+            return _floatProperties[propertyName];
+        }
 
-        public bool TryGetFloat(string name, out float value) => _floatProperties.TryGetValue(name, out value);
+        public bool TryGetFloat(string propertyName, out float propertyValue)
+        {
+            if (string.IsNullOrWhiteSpace(propertyName)) throw new StringIsNullOrWhitespaceException(nameof(propertyName));
+            return _floatProperties.TryGetValue(propertyName, out propertyValue);
+        }
 
-        public bool ContainsFloat(string name) => _floatProperties.ContainsKey(name);
+        public bool ContainsFloat(string propertyName)
+        {
+            if (string.IsNullOrWhiteSpace(propertyName)) throw new StringIsNullOrWhitespaceException(nameof(propertyName));
+            return _floatProperties.ContainsKey(propertyName);
+        }
 
 
         // ints
 
-        public void SetInt(string name, int value)
+        public void SetInt(string propertyName, int propertyValue)
         {
-            _intProperties[name] = value;
+            if (string.IsNullOrWhiteSpace(propertyName)) throw new StringIsNullOrWhitespaceException(nameof(propertyName));
+            _intProperties[propertyName] = propertyValue;
         }
 
-        public int GetInt(string name) => _intProperties[name];
+        public int GetInt(string propertyName)
+        {
+            if (string.IsNullOrWhiteSpace(propertyName)) throw new StringIsNullOrWhitespaceException(nameof(propertyName));
+            return _intProperties[propertyName];
+        }
 
-        public bool TryGetInt(string name, out int value) => _intProperties.TryGetValue(name, out value);
+        public bool TryGetInt(string propertyName, out int propertyValue)
+        {
+            if (string.IsNullOrWhiteSpace(propertyName)) throw new StringIsNullOrWhitespaceException(nameof(propertyName));
+            return _intProperties.TryGetValue(propertyName, out propertyValue);
+        }
 
-        public bool ContainsInt(string name) => _intProperties.ContainsKey(name);
+        public bool ContainsInt(string propertyName)
+        {
+            if (string.IsNullOrWhiteSpace(propertyName)) throw new StringIsNullOrWhitespaceException(nameof(propertyName));
+            return _intProperties.ContainsKey(propertyName);
+        }
 
 
         // strings
 
-        public void SetString(string name, string value)
+        public void SetString(string propertyName, string propertyValue)
         {
-            _stringProperties[name] = value;
+            if (string.IsNullOrWhiteSpace(propertyName)) throw new StringIsNullOrWhitespaceException(nameof(propertyName));
+            if (string.IsNullOrWhiteSpace(propertyValue)) throw new StringIsNullOrWhitespaceException(nameof(propertyValue));
+            _stringProperties[propertyName] = propertyValue;
         }
 
-        public string GetString(string name) => _stringProperties[name];
+        public string GetString(string propertyName)
+        {
+            if (string.IsNullOrWhiteSpace(propertyName)) throw new StringIsNullOrWhitespaceException(nameof(propertyName));
+            return _stringProperties[propertyName];
+        }
 
-        public bool TryGetString(string name, out string value) => _stringProperties.TryGetValue(name, out value);
+        public bool TryGetString(string propertyName, out string propertyValue)
+        {
+            if (string.IsNullOrWhiteSpace(propertyName)) throw new StringIsNullOrWhitespaceException(nameof(propertyName));
+            return _stringProperties.TryGetValue(propertyName, out propertyValue);
+        }
 
-        public bool ContainsString(string name) => _stringProperties.ContainsKey(name);
+        public bool ContainsString(string propertyName)
+        {
+            if (string.IsNullOrWhiteSpace(propertyName)) throw new StringIsNullOrWhitespaceException(nameof(propertyName));
+            return _stringProperties.ContainsKey(propertyName);
+        }
 
 
         // bools
 
-        public void SetBool(string name, bool value)
+        public void SetBool(string propertyName, bool propertyValue)
         {
-            if (value && !_boolProperties.Contains(name)) _boolProperties.Add(name);
-            else if (!value && _boolProperties.Contains(name)) _boolProperties.Remove(name);
+            if (string.IsNullOrWhiteSpace(propertyName)) throw new StringIsNullOrWhitespaceException(nameof(propertyName));
+            if (propertyValue && !_boolProperties.Contains(propertyName)) _boolProperties.Add(propertyName);
+            else if (!propertyValue && _boolProperties.Contains(propertyName)) _boolProperties.Remove(propertyName);
         }
 
-        public bool GetBool(string name) => _boolProperties.Contains(name);
+        public bool GetBool(string propertyName)
+        {
+            if (string.IsNullOrWhiteSpace(propertyName)) throw new StringIsNullOrWhitespaceException(nameof(propertyName));
+            return _boolProperties.Contains(propertyName);
+        }
 
 
         // clear
@@ -74,9 +119,24 @@ namespace SpineStateMachine
             _stringProperties.Clear();
         }
 
-        public void ClearInts() => _intProperties.Clear();
-        public void ClearBools() => _boolProperties.Clear();
-        public void ClearFloats() => _floatProperties.Clear();
-        public void ClearStrings() => _stringProperties.Clear();
+        public void ClearInts()
+        {
+            _intProperties.Clear();
+        }
+
+        public void ClearBools()
+        {
+            _boolProperties.Clear();
+        }
+
+        public void ClearFloats()
+        {
+            _floatProperties.Clear();
+        }
+
+        public void ClearStrings()
+        {
+            _stringProperties.Clear();
+        }
     }
 }

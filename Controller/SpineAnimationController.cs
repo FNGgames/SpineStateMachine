@@ -1,9 +1,7 @@
-﻿using System;
-using Spine;
-using Spine.Unity;
+﻿using Spine.Unity;
 using UnityEngine;
 
-namespace SpineStateMachine
+namespace SpineStateMachine.Unity
 {
     [RequireComponent(typeof(SkeletonAnimation))]
     public abstract class SpineAnimationController : MonoBehaviour
@@ -12,15 +10,13 @@ namespace SpineStateMachine
         public bool updateSkeleton;
 
         protected SkeletonAnimation anim { get; private set; }
-        protected AnimationStateData data { get; private set; }
         protected SpineFsm fsm { get; private set; }
         public bool initialized { get; private set; }
 
-        private void Awake()
+        protected void Awake()
         {
             anim = GetComponent<SkeletonAnimation>();
             fsm = new SpineFsm(anim, loggingFlags);
-            data = anim.AnimationState.Data;
             initialized = true;
             Setup();
         }
